@@ -1,0 +1,7 @@
+#+title: Todo
+
+A list of TODO items that are on the roadmap. This does not include bugs. For bugs refer to bugs.org
+
+* TASKS [0/2]
+** TODO Add support for the participant custom field.
+** TODO Add ability to stop the service from updating the custom fields more than once per day.

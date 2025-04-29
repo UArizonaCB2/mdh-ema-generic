@@ -1,0 +1,5 @@
+#+title: Bugs
+
+A list of all bugs reported, currently being worked on and those that remain unfixed.
+
+* Bugs [0/0]

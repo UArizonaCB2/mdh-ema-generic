@@ -7,7 +7,7 @@ const customFields = {
   ema_metadata : 'ema_metadata',  // Prefixed by {x}. Holds meta-data of random numbers already served.
   ema_random : 'ema_random', // Prefixed by {x}. Holds the random number of the EMA to serve.
   ema_categories : 'ema_categories', //Total number of EMA categories to serve.
-  ema_status : 'ema_status'
+  ema_status : 'ema_status', // sent | pending
 }
 
 async function main(args) {
@@ -49,16 +49,21 @@ async function main(args) {
     return null
   }
 
+  // TODO: Only get those participants for whom EMA has been enabled to reduce processing burden on the backend.
   const participants = await mdh.getAllParticipants(token, rksProjectId)
   for (const participant of participants.participants) {
-    let status = 'passed'
-    const ema_max = safeIntConvert(getCustomField(participant, customFields.ema_max), 0)
-    const ema_categories = parseInt(getCustomField(participant, customFields.ema_categories), 10)
-    if(Number.isNaN(ema_categories)) {
-      status = 'failed - Check value for EMA Category. It should be an Integer. Make sure there are no leading or trailing spaces'
-      const payload = createParticipantError(participant, status)
-      await mdh.updateParticipant(token, rksProjectId, payload)
-      return false
+
+    const ema_max = safeIntConvert(process.env.EMA_MAX, 0)
+    const ema_categories = safeIntConvert(process.env.EMA_CAT, 0)
+
+    // Check to see if we have already generated a random schedule for this participant
+    // and if the survey has not yet been sent.
+    // sent - EMA has been delivered, randomize.
+    // pending - EMA has not bee delivered. Move on and do nothing.
+    ema_status = getCustomField(participant, customFields.ema_status)
+    if (ema_status == 'pending') {
+      console.log("Nothing to do for participant - "+participant.participantIdentifier)
+      continue
     }
 
     // Random EMA logic for each category of EMA.
@@ -82,10 +87,12 @@ async function main(args) {
         'id': participant.id,
         'customFields': {}
       }
-      payload.customFields[customFields.ema_metadata+a.toString()] = ema_done.join(',')
-      payload.customFields[customFields.ema_random+a.toString()] = random_number
+      payload.customFields[customFields.ema_metadata + a.toString()] = ema_done.join(',')
+      payload.customFields[customFields.ema_random + a.toString()] = random_number
+      payload.customFields[customFields.ema_status] = 'pending'
       await mdh.updateParticipant(token, rksProjectId, payload)
     }
+    console.log("Updated for participant - "+participant.participantIdentifier)
   }
 
   return true

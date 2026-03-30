@@ -49,12 +49,24 @@ async function main(args) {
     return null
   }
 
-  // TODO: Only get those participants for whom EMA has been enabled to reduce processing burden on the backend.
-  const participants = await mdh.getAllParticipants(token, rksProjectId)
+    let query = {
+        'pageSize': 200
+    }
+    // Get all the participants for whom EMA has been enabled.
+    if (process.env.MDH_CUSTOM_FIELD_NAME &&
+        process.env.MDH_CUSTOM_FIELD_TRUE_VAL) {
+        console.log('Found EMA variables in enviornment. Using to filter participant list')
+        const fieldName = 'customField.'+process.env.MDH_CUSTOM_FIELD_NAME
+        query[fieldName] = process.env.MDH_CUSTOM_FIELD_TRUE_VAL 
+    }
+
+  const participants = await mdh.getAllParticipants(token, rksProjectId, query)
   for (const participant of participants.participants) {
 
     const ema_max = safeIntConvert(process.env.EMA_MAX, 0)
     const ema_categories = safeIntConvert(process.env.EMA_CAT, 0)
+
+      console.log(participant.participantIdentifier)
 
     // Check to see if we have already generated a random schedule for this participant
     // and if the survey has not yet been sent.

@@ -147,11 +147,8 @@ async function getDeviceData(token, projectId, params) {
 }
 
 // Method which gets all the participants.
-async function getAllParticipants(token, projectId) {
+async function getAllParticipants(token, projectId, params={'pageSize': 200}) {
   const resourceUrl = '/api/v1/administration/projects/'+projectId+'/participants'
-  const params = {
-    'pageSize': 200 
-  }
   return await getFromApi(token, resourceUrl, params)
 }
 
